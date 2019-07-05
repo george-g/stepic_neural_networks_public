@@ -3,6 +3,7 @@ from abc import ABCMeta, abstractmethod
 from collections import deque
 
 import numpy as np
+import sys
 
 from cars.utils import Action
 from learning_algorithms.network import Network
@@ -30,11 +31,13 @@ class SimpleCarAgent(Agent):
         :param history_data: количество хранимых нами данных о результатах предыдущих шагов
         """
         self.evaluate_mode = False  # этот агент учится или экзаменутеся? если учится, то False
-        self._rays =  # выберите число лучей ладара; например, 5
+        self._rays =  5# выберите число лучей ладара; например, 5
         # here +2 is for 2 inputs from elements of Action that we are trying to predict
         self.neural_net = Network([self.rays + 4,
                                    # внутренние слои сети: выберите, сколько и в каком соотношении вам нужно
                                    # например, (self.rays + 4) * 2 или просто число
+                                   self.rays + 6,
+                                   self.rays + 4,
                                    1],
                                   output_function=lambda x: x, output_derivative=lambda x: 1)
         self.sensor_data_history = deque([], maxlen=history_data)
@@ -82,7 +85,7 @@ class SimpleCarAgent(Agent):
 
     def show_weights(self):
         params = self.neural_net.sizes, self.neural_net.weights, self.neural_net.biases
-        np.set_printoptions(threshold=np.nan)
+        np.set_printoptions(threshold=sys.maxsize)
         return repr(params)
 
     def to_file(self, filename):
