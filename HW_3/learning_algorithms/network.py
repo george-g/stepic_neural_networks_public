@@ -171,14 +171,11 @@ class Network(object):
 
     def evaluate(self, test_data):
         """
-        Вернуть количество тестовых примеров, для которых нейронная сеть
-        возвращает правильный ответ. Обратите внимание: подразумевается,
-        что выход нейронной сети - это индекс, указывающий, какой из нейронов
-        последнего слоя имеет наибольшую активацию.
+        Вернуть средную ошибку (Middle error rate)
         """
         test_results = [(np.argmax(self.feedforward(x)), y)
                         for (x, y) in test_data]
-        return sum(int(x == y) for (x, y) in test_results)
+        return sum(abs(x - y) for (x, y) in test_results) / len(test_results)
 
     def cost_derivative(self, output_activations, y):
         """
