@@ -7,6 +7,7 @@ import sys
 
 from cars.utils import Action
 from learning_algorithms.network import Network
+from learning_algorithms.costfunction import cost_function
 
 
 class Agent(metaclass=ABCMeta):
@@ -99,6 +100,7 @@ class SimpleCarAgent(Agent):
         return self._rays
 
     def choose_action(self, sensor_info):
+        # sensor_info [модуль_скорости, угол_к_лучу_из_центра, расстояние_до_стены_1, расстояние_до_стены_2, расстояние_до_стены_3, расстояние_до_стены_4, расстояние_до_стены_5]
         # хотим предсказать награду за все действия, доступные из текущего состояния
         rewards_to_controls_map = {}
         # дискретизируем множество значений, так как все возможные мы точно предсказать не сможем
@@ -151,7 +153,7 @@ class SimpleCarAgent(Agent):
         i = -1
         while len(self.reward_history) > abs(i) and abs(i) < reward_depth:
             self.reward_history[i] += reward
-            reward *= 0.5
+            reward *= 0.5 # TBD: Возможно стоит сделать немного другую функцию уменьшения награды предыдущих ходов
             i -= 1
 
         # Если у нас накопилось хоть чуть-чуть данных, давайте потренируем нейросеть
@@ -163,3 +165,5 @@ class SimpleCarAgent(Agent):
             y_train = self.reward_history
             train_data = [(x[:, np.newaxis], y) for x, y in zip(X_train, y_train)]
             self.neural_net.SGD(training_data=train_data, epochs=15, mini_batch_size=train_every, eta=0.05)
+            # todo: Послать cost и веса сети
+            print("cost: " + str(cost_function(self.neural_net, train_data, onehot=True)))
