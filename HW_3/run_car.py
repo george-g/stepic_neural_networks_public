@@ -13,6 +13,10 @@ parser.add_argument("-s", "--steps", type=int)
 parser.add_argument("-f", "--filename", type=str)
 parser.add_argument("-e", "--evaluate", type=bool)
 parser.add_argument("--seed", type=int)
+parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',
+                    help='amount of neurons in hidden layers')
+parser.add_argument('--rays', dest='rays', type=int, 
+                    help='amount of ladar ray', default = 5)
 args = parser.parse_args()
 
 print(args.steps, args.seed, args.filename, args.evaluate)
@@ -32,4 +36,4 @@ if args.filename:
         w.set_agents([agent])
         w.run(steps)
 else:
-    SimpleCarWorld(1, m, SimplePhysics, SimpleCarAgent, timedelta=0.2).run(steps)
+    SimpleCarWorld(1, m, SimplePhysics, SimpleCarAgent, timedelta=0.2, rays=args.rays, hiddenLayers=args.hiddenLayers).run(steps)

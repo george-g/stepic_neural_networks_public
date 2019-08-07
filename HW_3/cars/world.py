@@ -36,7 +36,7 @@ class SimpleCarWorld(World):
 
     size = (800, 600)
 
-    def __init__(self, num_agents, car_map, Physics, agent_class, **physics_pars):
+    def __init__(self, num_agents, car_map, Physics, agent_class, rays=5, hiddenLayers=None, **physics_pars):
         """
         Инициализирует мир
         :param num_agents: число агентов в мире
@@ -50,11 +50,11 @@ class SimpleCarWorld(World):
         self.map = car_map
 
         # создаём агентов
-        self.set_agents(num_agents, agent_class)
+        self.set_agents(num_agents, agent_class, rays, hiddenLayers)
 
         self._info_surface = pygame.Surface(self.size)
 
-    def set_agents(self, agents=1, agent_class=None):
+    def set_agents(self, agents=1, agent_class=None, rays=5, hiddenLayers=None):
         """
         Поместить в мир агентов
         :param agents: int или список Agent, если int -- то обязателен параметр agent_class, так как в мир присвоятся
@@ -66,7 +66,7 @@ class SimpleCarWorld(World):
         heading = rect(-0.3, 1)
 
         if type(agents) is int:
-            self.agents = [agent_class() for _ in range(agents)]
+            self.agents = [agent_class(rays, hiddenLayers) for _ in range(agents)]
         elif type(agents) is list:
             self.agents = agents
         else:

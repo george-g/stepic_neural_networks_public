@@ -26,20 +26,23 @@ class Agent(metaclass=ABCMeta):
 
 
 class SimpleCarAgent(Agent):
-    def __init__(self, history_data=int(50000)):
+    def __init__(self, rays=5, hiddenLayers=None, history_data=int(50000)):
         """
         Создаёт машинку
         :param history_data: количество хранимых нами данных о результатах предыдущих шагов
         """
+
         self.evaluate_mode = False  # этот агент учится или экзаменутеся? если учится, то False
-        self._rays =  5# выберите число лучей ладара; например, 5
-        # here +2 is for 2 inputs from elements of Action that we are trying to predict
-        self.neural_net = Network([self.rays + 4,
-                                   # внутренние слои сети: выберите, сколько и в каком соотношении вам нужно
-                                   # например, (self.rays + 4) * 2 или просто число
-                                   self.rays + 6,
-                                   self.rays + 4,
-                                   1],
+        self._rays =  rays # выберите число лучей ладара; например, 5        
+        if hiddenLayers == None:            
+            hiddenLayers = [self.rays + 6, self.rays + 4]
+
+        # here +4 is for 2 inputs from elements of Action that we are trying to predict and 2 for velocity and angle
+        hiddenLayers.insert(0, self.rays + 4)
+        # add 1 because only one exit neuron we need
+        hiddenLayers.append(1)
+        
+        self.neural_net = Network(hiddenLayers,
                                   output_function=lambda x: x, output_derivative=lambda x: 1)
         self.sensor_data_history = deque([], maxlen=history_data)
         self.chosen_actions_history = deque([], maxlen=history_data)
