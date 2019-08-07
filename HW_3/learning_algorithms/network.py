@@ -54,6 +54,22 @@ class Network(object):
         assert output_derivative is not None, "You should either provide derivative of the output function or leave it default!"
         self.output_derivative = output_derivative
 
+    @property
+    def weights(self):
+        return self.__weights
+
+    @weights.setter
+    def weights(self, weights):        
+        self.__weights = weights
+
+    @property
+    def biases(self):
+        return self.__biases
+
+    @biases.setter
+    def biases(self, biases):
+        self.__biases = biases
+
     def feedforward(self, a):
         """
         Вычислить и вернуть выходную активацию нейронной сети
