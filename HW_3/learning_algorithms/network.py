@@ -11,6 +11,12 @@
 import random
 import numpy as np
 
+import zmq
+
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://*:5555")
+
 
 #### Вспомогательные функции
 def sigmoid(z):
@@ -61,6 +67,8 @@ class Network(object):
     @weights.setter
     def weights(self, weights):        
         self.__weights = weights
+        socket.send_string("weights", zmq.SNDMORE)
+        socket.send_pyobj(weights)        
 
     @property
     def biases(self):
@@ -69,6 +77,8 @@ class Network(object):
     @biases.setter
     def biases(self, biases):
         self.__biases = biases
+        socket.send_string("biases", zmq.SNDMORE)
+        socket.send_pyobj(biases)        
 
     def feedforward(self, a):
         """
