@@ -127,8 +127,15 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                 self.layout.addWidget(self.heat_map_canvas[-1])
             
                 self._seaborn_heatmap_ax.append(self.heat_map_canvas[-1].figure.subplots())
-                #uniform_data = np.random.rand(10, 12)
-                sns.heatmap(w, ax=self._seaborn_heatmap_ax[-1])
+
+        print('update weights')
+        
+        for (w, i) in  zip(weights, range(len(weights))):        
+            a, b = w.shape
+            w = np.random.rand(a, b)
+            self._seaborn_heatmap_ax[i].clear()
+            sns.heatmap(w, ax=self._seaborn_heatmap_ax[i])
+            self._seaborn_heatmap_ax[i].figure.canvas.draw()
 
 
     def on_read_msg(self):
