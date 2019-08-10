@@ -45,12 +45,14 @@ from matplotlib.figure import Figure
 hiddenLayers = list(map(str, args.hiddenLayers))
 print(args.hiddenLayers)
 print(hiddenLayers)
-popenargs = [sys.executable, 'run_car.py', 
+
+def startRunCar():
+    popenargs = [sys.executable, 'run_car.py', 
                                         '--seed', str(args.seed), 
                                         '--rays', str(args.rays),
                                         '--hiddenlayers']
-popenargs.extend(hiddenLayers)                                        
-subprocess.Popen(popenargs)
+    popenargs.extend(hiddenLayers)                                        
+    subprocess.Popen(popenargs)
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -110,6 +112,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
             100, [(self._update_canvas, (), {})])
         self._timer.start()
 
+        QtCore.QTimer.singleShot(1000, self.OnLoad)
+
+    def OnLoad(self):
+        startRunCar()
 
     def _update_canvas(self):
         self._dynamic_ax.clear()

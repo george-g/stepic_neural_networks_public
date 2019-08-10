@@ -12,11 +12,13 @@ import random
 import numpy as np
 
 import zmq
+import time
 
 context = zmq.Context()
 socket = context.socket(zmq.PUB)
 socket.bind("tcp://*:5555")
-
+# Missing-Message-Problem-Solver
+time.sleep(1)
 
 #### Вспомогательные функции
 def sigmoid(z):
@@ -59,6 +61,7 @@ class Network(object):
         self.output_function = output_function
         assert output_derivative is not None, "You should either provide derivative of the output function or leave it default!"
         self.output_derivative = output_derivative
+        self.sendParameters()
 
     @property
     def weights(self):
@@ -66,9 +69,7 @@ class Network(object):
 
     @weights.setter
     def weights(self, weights):        
-        self.__weights = weights
-        socket.send_string("weights", zmq.SNDMORE)
-        socket.send_pyobj(weights)        
+        self.__weights = weights     
 
     @property
     def biases(self):
@@ -77,8 +78,11 @@ class Network(object):
     @biases.setter
     def biases(self, biases):
         self.__biases = biases
-        socket.send_string("biases", zmq.SNDMORE)
-        socket.send_pyobj(biases)        
+
+    def sendParameters(self):
+        print('send parameters')
+        socket.send_string("weights", zmq.SNDMORE)
+        socket.send_pyobj((self.weights, self.biases))
 
     def feedforward(self, a):
         """
@@ -127,6 +131,9 @@ class Network(object):
                     j, success_tests, n_test))
             else:
                 print("Эпоха {0} завершена".format(j))
+
+        self.sendParameters()
+
         if test_data is not None:
             return success_tests / n_test
 
