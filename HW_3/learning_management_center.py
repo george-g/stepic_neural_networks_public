@@ -42,7 +42,8 @@ else:
         FigureCanvas)
 from matplotlib.figure import Figure
 
-hiddenLayers = list(map(str, args.hiddenLayers))
+hiddenLayersList = args.hiddenLayers if args.hiddenLayers else [30, 20]
+hiddenLayers = list(map(str, hiddenLayersList))
 print(args.hiddenLayers)
 print(hiddenLayers)
 
@@ -74,16 +75,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         vlayout = QtWidgets.QVBoxLayout(self._main)
         vlayout.setObjectName("verticalLayout")
         
-        layout = QtWidgets.QHBoxLayout()
-        layout.setObjectName("horizontalLayoutWithHeatMaps")
+        self.layout = QtWidgets.QHBoxLayout()
+        self.layout.setObjectName("horizontalLayoutWithHeatMaps")
 
-        heat_map_canvas = []
-        heat_map_canvas.append(FigureCanvas(Figure(figsize=(5, 3))))
-        layout.addWidget(heat_map_canvas[0])
+        self.heat_map_canvas = []
         #self.addToolBar(NavigationToolbar(static_canvas, self))
 
         dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        layout.addWidget(dynamic_canvas)
+        self.layout.addWidget(dynamic_canvas)
         #self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(dynamic_canvas, self))
 
         layout2 = QtWidgets.QHBoxLayout()
@@ -92,14 +91,10 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         static_canvas = FigureCanvas(Figure(figsize=(5, 3)))
         layout2.addWidget(static_canvas)
 
-        vlayout.addLayout(layout)
+        vlayout.addLayout(self.layout)
         vlayout.addLayout(layout2)
         
         # seaborn !!!
-        self._seaborn_heatmap_ax = []
-        self._seaborn_heatmap_ax.append(heat_map_canvas[0].figure.subplots())
-        uniform_data = np.random.rand(10, 12)
-        sns.heatmap(uniform_data, ax=self._seaborn_heatmap_ax[0])
         # sns.swarmplot(x="species", y="petal_length", data=iris, ax=self._seaborn_heatmap_ax)
         # seaborn !!!
 
@@ -124,19 +119,36 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._dynamic_ax.plot(t, np.sin(t + time.time()))
         self._dynamic_ax.figure.canvas.draw()
 
+    def update_heatmaps(self, weights, biases):
+        if (len(self.heat_map_canvas) == 0):
+            self._seaborn_heatmap_ax = []
+            for w in weights:
+                self.heat_map_canvas.append(FigureCanvas(Figure(figsize=(5, 3))))
+                self.layout.addWidget(self.heat_map_canvas[-1])
+            
+                self._seaborn_heatmap_ax.append(self.heat_map_canvas[-1].figure.subplots())
+                #uniform_data = np.random.rand(10, 12)
+                sns.heatmap(w, ax=self._seaborn_heatmap_ax[-1])
+
+
     def on_read_msg(self):
         self.read_noti.setEnabled(False)
 
         if self._zmq_sock.getsockopt(zmq.EVENTS) & zmq.POLLIN:
             while self._zmq_sock.getsockopt(zmq.EVENTS) & zmq.POLLIN:
-                topic, data = self._zmq_sock.recv_multipart()
+                topic = self._zmq_sock.recv_string()
+                data = self._zmq_sock.recv_pyobj()                
                 print(topic)
+                weights, biases = data
+                self.update_heatmaps(weights, biases)
         elif self._zmq_sock.getsockopt(zmq.EVENTS) & zmq.POLLOUT:
             print("[Socket] zmq.POLLOUT")
         elif self._zmq_sock.getsockopt(zmq.EVENTS) & zmq.POLLERR:
             print("[Socket] zmq.POLLERR")
 
         self.read_noti.setEnabled(True)
+
+
 
 if __name__ == "__main__":
     qapp = QtWidgets.QApplication(sys.argv)
