@@ -19,6 +19,8 @@ import subprocess
 
 import argparse
 
+import pickle
+
 parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',
                     help='amount of neurons in hidden layers')
@@ -122,19 +124,29 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def update_heatmaps(self, weights, biases):
         if (len(self.heat_map_canvas) == 0):
             self._seaborn_heatmap_ax = []
-            for w in weights:
-                self.heat_map_canvas.append(FigureCanvas(Figure(figsize=(5, 3))))
-                self.layout.addWidget(self.heat_map_canvas[-1])
-            
+            for i in range(len(weights)+1):
+                figsize = (5, 3) if i < len(weights) else (5, 1)
+                self.heat_map_canvas.append(FigureCanvas(Figure(figsize=figsize)))
+                self.layout.addWidget(self.heat_map_canvas[-1])            
                 self._seaborn_heatmap_ax.append(self.heat_map_canvas[-1].figure.subplots())
 
         print('update weights')
+
+        vmin = min([np.amin(x) for x in weights])
+        vmax = max([np.amax(x) for x in weights])
         
         for (w, i) in  zip(weights, range(len(weights))):        
             a, b = w.shape
-            w = np.random.rand(a, b)
-            self._seaborn_heatmap_ax[i].clear()
-            sns.heatmap(w, ax=self._seaborn_heatmap_ax[i])
+            self._seaborn_heatmap_ax[i].clear()            
+
+            if (i < len(weights) - 1):
+                sns.heatmap(w, ax=self._seaborn_heatmap_ax[i], vmin = vmin, vmax = vmax, cbar = False)
+            else:
+                # Обновление еще и colormap
+                self._seaborn_heatmap_ax[-1].clear()
+                sns.heatmap(w, ax=self._seaborn_heatmap_ax[i], cbar_ax=self._seaborn_heatmap_ax[-1], vmin = vmin, vmax = vmax, cbar = True)
+                self._seaborn_heatmap_ax[-1].figure.canvas.draw()
+
             self._seaborn_heatmap_ax[i].figure.canvas.draw()
 
 
