@@ -52,12 +52,12 @@ print(hiddenLayers)
 
 def startRunCar():
     pass
-    # popenargs = [sys.executable, 'run_car.py', 
-    #                                     '--seed', str(args.seed), 
-    #                                     '--rays', str(args.rays),
-    #                                     '--hiddenlayers']
-    # popenargs.extend(hiddenLayers)                                        
-    # subprocess.Popen(popenargs)
+    popenargs = [sys.executable, 'run_car.py', 
+                                        '--seed', str(args.seed), 
+                                        '--rays', str(args.rays),
+                                        '--hiddenlayers']
+    popenargs.extend(hiddenLayers)                                        
+    subprocess.Popen(popenargs)
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -74,6 +74,14 @@ class ApplicationWindow(QtWidgets.QMainWindow):
                                              self)
         self.read_noti.activated.connect(self.on_read_msg)
 
+        self._zmq_sock2 = self._zmq_context.socket(zmq.SUB)
+        self._zmq_sock2.connect("tcp://localhost:5557")
+        self._zmq_sock2.setsockopt(zmq.SUBSCRIBE, b'progress')
+        self.read_noti2 = QSocketNotifier(self._zmq_sock2.getsockopt(zmq.FD),
+                                             QSocketNotifier.Read,
+                                             self)
+        self.read_noti2.activated.connect(self.on_read_msg2)
+
         self._main = QtWidgets.QWidget()
         self.setCentralWidget(self._main)
         vlayout = QtWidgets.QVBoxLayout(self._main)
@@ -84,10 +92,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.heat_map_canvas = []
         #self.addToolBar(NavigationToolbar(static_canvas, self))
-
-        dynamic_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        self.layout.addWidget(dynamic_canvas)
-        #self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(dynamic_canvas, self))
+        
+        #self.layout.addWidget(cost_canvas)
+        #self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(cost_canvas, self))
 
         layout2 = QtWidgets.QHBoxLayout()
         layout2.setObjectName("horizontalLayoutWithErrorGraphAndControls")
@@ -95,8 +102,11 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         layout3 = QtWidgets.QHBoxLayout()
         layout3.setObjectName("horizontalLayoutWithErrorGraph")
 
-        static_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        layout3.addWidget(static_canvas)
+        #static_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        cost_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        eval_canvas = FigureCanvas(Figure(figsize=(5, 3)))
+        layout3.addWidget(cost_canvas)        
+        layout3.addWidget(eval_canvas)
     
         self.learninRate = QDoubleSpinBox()
         self.learninRate.setValue(0.05)
@@ -137,14 +147,17 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         # sns.swarmplot(x="species", y="petal_length", data=iris, ax=self._seaborn_heatmap_ax)
         # seaborn !!!
 
-        self._static_ax = static_canvas.figure.subplots()
-        t = np.linspace(0, 10, 501)
-        self._static_ax.plot(t, np.tan(t), ".")
+        # self._static_ax = static_canvas.figure.subplots()
+        # t = np.linspace(0, 10, 501)
+        # self._static_ax.plot(t, np.tan(t), ".")
 
-        self._dynamic_ax = dynamic_canvas.figure.subplots()
-        self._timer = dynamic_canvas.new_timer(
-            100, [(self._update_canvas, (), {})])
-        self._timer.start()
+        self._cost_ax = cost_canvas.figure.subplots()
+        self._eval_ax = eval_canvas.figure.subplots()
+        # self._timer = cost_canvas.new_timer(
+        #     100, [(self._update_canvas, (), {})])
+        # self._timer.start()
+        self.cost = np.array([])
+        self.eval = np.array([])
 
         QtCore.QTimer.singleShot(1000, self.OnLoad)
 
@@ -154,12 +167,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
     def OnLoad(self):
         startRunCar()
 
-    def _update_canvas(self):
-        self._dynamic_ax.clear()
+    def updateProgress(self, cost, eval):
+        self.cost = np.append(self.cost, [cost])
+        self.eval = np.append(self.eval, [eval])
+
+        self._cost_ax.clear()
         t = np.linspace(0, 10, 101)
         # Shift the sinusoid as a function of time.
-        self._dynamic_ax.plot(t, np.sin(t + time.time()))
-        self._dynamic_ax.figure.canvas.draw()
+        self._cost_ax.plot(self.cost)
+        self._cost_ax.figure.canvas.draw()
+
+        self._eval_ax.clear()
+        t = np.linspace(0, 10, 101)
+        # Shift the sinusoid as a function of time.
+        self._eval_ax.plot(self.eval)
+        self._eval_ax.figure.canvas.draw()
+
 
     def update_heatmaps(self, weights, biases):
         if (len(self.heat_map_canvas) == 0):
@@ -207,6 +230,22 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         self.read_noti.setEnabled(True)
 
+    def on_read_msg2(self):
+        self.read_noti2.setEnabled(False)
+
+        if self._zmq_sock2.getsockopt(zmq.EVENTS) & zmq.POLLIN:
+            while self._zmq_sock2.getsockopt(zmq.EVENTS) & zmq.POLLIN:
+                topic = self._zmq_sock2.recv_string()
+                data = self._zmq_sock2.recv_pyobj()                
+                print(topic)
+                cost, eval = data
+                self.updateProgress(cost, eval)
+        elif self._zmq_sock2.getsockopt(zmq.EVENTS) & zmq.POLLOUT:
+            print("[Socket] zmq.POLLOUT")
+        elif self._zmq_sock2.getsockopt(zmq.EVENTS) & zmq.POLLERR:
+            print("[Socket] zmq.POLLERR")
+
+        self.read_noti2.setEnabled(True)
 
 
 if __name__ == "__main__":

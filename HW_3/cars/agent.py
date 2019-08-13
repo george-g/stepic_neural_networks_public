@@ -9,6 +9,12 @@ from cars.utils import Action
 from learning_algorithms.network import Network
 from learning_algorithms.costfunction import cost_function
 
+import zmq
+
+context = zmq.Context()
+socket = context.socket(zmq.PUB)
+socket.bind("tcp://*:5557")
+
 
 class Agent(metaclass=ABCMeta):
     @property
@@ -169,6 +175,9 @@ class SimpleCarAgent(Agent):
             train_data = [(x[:, np.newaxis], y) for x, y in zip(X_train, y_train)]
             self.neural_net.SGD(training_data=train_data, epochs=15, mini_batch_size=train_every, eta=0.05)
             # todo: Послать cost и веса сети
-            # print("cost: " + str(cost_function(self.neural_net, train_data, onehot=True)))
-            print("evaluate: " + str(self.neural_net.evaluate(train_data)))
+            print('send cost and evaluate')
+            cost = cost_function(self.neural_net, train_data, onehot=True)
+            eval = self.neural_net.evaluate(train_data)
+            socket.send_string("progress", zmq.SNDMORE)
+            socket.send_pyobj((cost, eval))
 
