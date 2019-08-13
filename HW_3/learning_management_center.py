@@ -39,6 +39,7 @@ if is_pyqt5():
     from matplotlib.backends.backend_qt5agg import (
         FigureCanvas)
     from PyQt5.QtCore import QSocketNotifier
+    from PyQt5.QtWidgets import QDoubleSpinBox, QLabel, QPushButton
 else:
     from matplotlib.backends.backend_qt4agg import (
         FigureCanvas)
@@ -50,12 +51,13 @@ print(args.hiddenLayers)
 print(hiddenLayers)
 
 def startRunCar():
-    popenargs = [sys.executable, 'run_car.py', 
-                                        '--seed', str(args.seed), 
-                                        '--rays', str(args.rays),
-                                        '--hiddenlayers']
-    popenargs.extend(hiddenLayers)                                        
-    subprocess.Popen(popenargs)
+    pass
+    # popenargs = [sys.executable, 'run_car.py', 
+    #                                     '--seed', str(args.seed), 
+    #                                     '--rays', str(args.rays),
+    #                                     '--hiddenlayers']
+    # popenargs.extend(hiddenLayers)                                        
+    # subprocess.Popen(popenargs)
 
 class ApplicationWindow(QtWidgets.QMainWindow):
     def __init__(self):
@@ -88,10 +90,45 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         #self.addToolBar(QtCore.Qt.BottomToolBarArea, NavigationToolbar(dynamic_canvas, self))
 
         layout2 = QtWidgets.QHBoxLayout()
-        layout2.setObjectName("horizontalLayoutWithErrorGraph")
+        layout2.setObjectName("horizontalLayoutWithErrorGraphAndControls")
+
+        layout3 = QtWidgets.QHBoxLayout()
+        layout3.setObjectName("horizontalLayoutWithErrorGraph")
 
         static_canvas = FigureCanvas(Figure(figsize=(5, 3)))
-        layout2.addWidget(static_canvas)
+        layout3.addWidget(static_canvas)
+    
+        self.learninRate = QDoubleSpinBox()
+        self.learninRate.setValue(0.05)
+        self.learninRate.setSingleStep(0.005)
+        self.learninRate.setDecimals(3)
+        
+        self.l1 = QDoubleSpinBox()
+        self.l1.setValue(0.05)
+        self.l1.setSingleStep(0.005)
+        self.l1.setDecimals(3)
+
+        self.l2 = QDoubleSpinBox()
+        self.l2.setValue(0.05)        
+        self.l2.setSingleStep(0.005)
+        self.l2.setDecimals(3)
+
+        self.sendButton = QPushButton()
+        self.sendButton.setText("Send")
+        self.sendButton.clicked.connect(self.sendHiperParameters)
+
+        layout4 = QtWidgets.QVBoxLayout()
+        layout4.setObjectName("vertiacalWithControls")
+        layout4.addWidget(QLabel("Learning Rate"))
+        layout4.addWidget(self.learninRate)        
+        layout4.addWidget(QLabel("L1"))
+        layout4.addWidget(self.l1)        
+        layout4.addWidget(QLabel("L2"))
+        layout4.addWidget(self.l2)        
+        layout4.addWidget(self.sendButton)
+
+        layout2.addLayout(layout3)
+        layout2.addLayout(layout4)
 
         vlayout.addLayout(self.layout)
         vlayout.addLayout(layout2)
@@ -110,6 +147,9 @@ class ApplicationWindow(QtWidgets.QMainWindow):
         self._timer.start()
 
         QtCore.QTimer.singleShot(1000, self.OnLoad)
+
+    def sendHiperParameters(self):
+        print(self.learninRate.value(), self.l1.value(), self.l2.value())
 
     def OnLoad(self):
         startRunCar()
