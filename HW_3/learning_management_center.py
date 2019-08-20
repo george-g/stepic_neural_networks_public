@@ -25,7 +25,7 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',
                     help='amount of neurons in hidden layers')
 parser.add_argument('--rays', dest='rays', type=int, 
-                    help='amount of ladar ray', default = 5)
+                    help='amount of ladar ray', default = 7)
 parser.add_argument("-s", "--steps", type=int)
 parser.add_argument("-f", "--filename", type=str)
 parser.add_argument("--seed", type=int, default = 23)
@@ -45,7 +45,7 @@ else:
         FigureCanvas)
 from matplotlib.figure import Figure
 
-hiddenLayersList = args.hiddenLayers if args.hiddenLayers else [30, 20]
+hiddenLayersList = args.hiddenLayers if args.hiddenLayers else [60, 60, 60] #[65, 45, 25, 10] #[35, 5]
 hiddenLayers = list(map(str, hiddenLayersList))
 print(args.hiddenLayers)
 print(hiddenLayers)
@@ -54,9 +54,11 @@ def startRunCar():
     pass
     popenargs = [sys.executable, 'run_car.py', 
                                         '--seed', str(args.seed), 
-                                        '--rays', str(args.rays),
-                                        '--hiddenlayers']
-    popenargs.extend(hiddenLayers)                                        
+                                        '--rays', str(args.rays)
+                                        ]
+    if (len(hiddenLayersList ) > 0):
+        popenargs.extend(['--hiddenlayers'])
+        popenargs.extend(hiddenLayers)                                     
     subprocess.Popen(popenargs)
 
 class ApplicationWindow(QtWidgets.QMainWindow):
@@ -195,7 +197,8 @@ class ApplicationWindow(QtWidgets.QMainWindow):
 
         print('update weights')
 
-        vmin = min([np.amin(x) for x in weights])
+        weights = np.abs(weights)
+        vmin = 0
         vmax = max([np.amax(x) for x in weights])
         
         for (w, i) in  zip(weights, range(len(weights))):        

@@ -27,6 +27,8 @@ np.random.seed(seed)
 random.seed(seed)
 m = generate_map(8, 5, 3, 3)
 
+hiddenLayersList = args.hiddenLayers if args.hiddenLayers else [] # [55, 45]
+
 if args.filename:
     agent = SimpleCarAgent.from_file(args.filename)
     w = SimpleCarWorld(1, m, SimplePhysics, SimpleCarAgent, timedelta=0.2)
@@ -36,4 +38,4 @@ if args.filename:
         w.set_agents([agent])
         w.run(steps)
 else:
-    SimpleCarWorld(1, m, SimplePhysics, SimpleCarAgent, timedelta=0.2, rays=args.rays, hiddenLayers=args.hiddenLayers).run(steps)
+    SimpleCarWorld(1, m, SimplePhysics, SimpleCarAgent, timedelta=0.2, rays=args.rays, hiddenLayers=hiddenLayersList).run(steps)
