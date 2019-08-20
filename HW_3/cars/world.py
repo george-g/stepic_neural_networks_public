@@ -26,11 +26,11 @@ class World(metaclass=ABCMeta):
 
 
 class SimpleCarWorld(World):
-    COLLISION_PENALTY = 32 * 1e0
-    HEADING_REWARD = 0 * 1e-1
-    WRONG_HEADING_PENALTY = 0 * 1e0
-    IDLENESS_PENALTY = 32 * 1e-1
-    SPEEDING_PENALTY = 0 * 1e-1
+    COLLISION_PENALTY = 0.2 * 1e0
+    HEADING_REWARD = 0.0 * 1e0
+    WRONG_HEADING_PENALTY = 0.2 * 1e0
+    IDLENESS_PENALTY = 0.1 * 1e0
+    SPEEDING_PENALTY = 0.1 * 1e0
     MIN_SPEED = 0.1 * 1e0
     MAX_SPEED = 10 * 1e0
 
@@ -53,6 +53,9 @@ class SimpleCarWorld(World):
         self.set_agents(num_agents, agent_class, rays, hiddenLayers)
 
         self._info_surface = pygame.Surface(self.size)
+        self.maxIntersect = 0.0
+        self.minIntersect = np.infty
+        self.maxAbsVelosity = 0.0
 
     def set_agents(self, agents=1, agent_class=None, rays=5, hiddenLayers=None):
         """
@@ -104,7 +107,7 @@ class SimpleCarWorld(World):
         :param collision: произошло ли столкновение со стеной на прошлом шаге
         :return reward: награду агента (возможно, отрицательную)
         """
-        a = np.sin(angle(-state.position, state.heading))
+        a = -np.sin(angle(-state.position, state.heading))
         heading_reward = 1 if a > 0.1 else a if a > 0 else 0
         heading_penalty = a if a <= 0 else 0
         idle_penalty = 0 if abs(state.velocity) > self.MIN_SPEED else -self.IDLENESS_PENALTY
@@ -191,6 +194,7 @@ class SimpleCarWorld(World):
         state = self.agent_states[agent]
         vision = [abs(state.velocity), np.sin(angle(-state.position, state.heading))]
         extras = len(vision)
+        self.maxAbsVelosity = max(self.maxAbsVelosity, vision[0])
 
         delta = pi / (agent.rays - 1)
         start = rotate(state.heading, - pi / 2)
@@ -207,7 +211,7 @@ class SimpleCarWorld(World):
                 outer_wall = self.map[j - 1][1], self.map[j][1]
 
                 intersect = intersect_ray_with_segment((state.position, ray), inner_wall)
-                intersect = abs(intersect - state.position) if intersect is not None else np.infty
+                intersect = abs(intersect - state.position) if intersect is not None else np.infty           
                 if intersect < vision[-1]:
                     vision[-1] = intersect
 
@@ -215,6 +219,11 @@ class SimpleCarWorld(World):
                 intersect = abs(intersect - state.position) if intersect is not None else np.infty
                 if intersect < vision[-1]:
                     vision[-1] = intersect
+                maxIntersect = max(self.maxIntersect, intersect)
+                if ((maxIntersect > self.maxIntersect) & (maxIntersect < 1000000000.000)):
+                    self.maxIntersect = maxIntersect
+                    print("maxIntersect ", str(self.maxIntersect))
+                self.minIntersect = min(self.minIntersect, intersect)
 
             assert vision[-1] < np.infty, \
                 "Something went wrong: {}, {}".format(str(state), str(agent.chosen_actions_history[-1]))
@@ -235,8 +244,8 @@ class SimpleCarWorld(World):
 
         if len(self.agents) == 1:
             a = self.agents[0]
-            draw_text("Reward: %.3f" % a.reward_history[-1], self._info_surface, scale, self.size,
-                      text_color=white, bg_color=black)
+            draw_text("Reward: %.3f maxIntersect: %.3f minIntersect: %.3f maxAbsVelosity: %.3f" % ( a.reward_history[-1], self.maxIntersect, self.minIntersect, self.maxAbsVelosity ),
+                      self._info_surface, scale, self.size, text_color=white, bg_color=black)
             steer, acc = a.chosen_actions_history[-1]
             state = self.agent_states[a]
             draw_text("Action: steer.: %.2f, accel: %.2f" % (steer, acc), self._info_surface, scale,
@@ -254,6 +263,10 @@ class SimpleCarWorld(World):
         return rotated, rectangle
 
     def _draw_ladar(self, sensors, state, scale):
+        for infin in np.isinf(sensors):
+            if infin:
+                pass
+
         surface = pygame.display.get_surface().copy()
         surface.fill(white)
         surface.set_colorkey(white)
