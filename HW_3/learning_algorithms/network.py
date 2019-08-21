@@ -62,6 +62,8 @@ class Network(object):
         assert output_derivative is not None, "You should either provide derivative of the output function or leave it default!"
         self.output_derivative = output_derivative
         self.sendParameters()
+        self.l1=0.0000
+        self.l2=0.0000
 
     @property
     def weights(self):
@@ -146,16 +148,17 @@ class Network(object):
         ``eta`` - величина шага (learning rate).
         """
 
-        nabla_b = [np.zeros(b.shape) for b in self.biases]
-        nabla_w = [np.zeros(w.shape) for w in self.weights]
+        nabla_b = [np.zeros(b.shape) for b in self.biases[1:]]
+        nabla_w = [np.zeros(w.shape) for w in self.weights[1:]]
         for x, y in mini_batch:
             delta_nabla_b, delta_nabla_w = self.backprop(x, y)
-            nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b)]
-            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w)]
+            nabla_b = [nb + dnb for nb, dnb in zip(nabla_b, delta_nabla_b[1:])]
+            nabla_w = [nw + dnw for nw, dnw in zip(nabla_w, delta_nabla_w[1:])]
 
         eps = eta / len(mini_batch)
-        self.weights = [w - eps * nw for w, nw in zip(self.weights, nabla_w)]
-        self.biases = [b - eps * nb for b, nb in zip(self.biases, nabla_b)]
+        self.weights[1:] = [w - eps * nw - self.l1 * np.sign(w) - self.l2 * w for w, nw in zip(self.weights[1:], nabla_w)]
+        self.biases[1:]  = [b - eps * nb for b, nb in zip(self.biases[1:],  nabla_b)]
+
 
     def backprop(self, x, y):
         """

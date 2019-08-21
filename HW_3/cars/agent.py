@@ -45,11 +45,19 @@ class SimpleCarAgent(Agent):
 
         # here +4 is for 2 inputs from elements of Action that we are trying to predict and 2 for velocity and angle
         hiddenLayers.insert(0, self.rays + 4)
+        hiddenLayers.insert(1, self.rays + 4) # normalayse level
         # add 1 because only one exit neuron we need
         hiddenLayers.append(1)
         
         self.neural_net = Network(hiddenLayers,
                                   output_function=lambda x: x, output_derivative=lambda x: 1)
+        self.neural_net.weights[0] = np.eye(self.rays + 4) * 2/25 # Нормализация для длины луча
+        self.neural_net.weights[0][0, 0] = 2/10 # # Нормализация для скорости
+        self.neural_net.weights[0][1, 1] = 2 # # Нормализация для синуса угла к лучу из центра
+        self.neural_net.weights[0][-2, -2] = 2 # # Нормализация для поворота руля
+        self.neural_net.weights[0][-1, -1] = 2/0.75 # # Нормализация для ускорения
+        self.neural_net.biases[0] = np.zeros_like(self.neural_net.biases[0])
+
         self.sensor_data_history = deque([], maxlen=history_data)
         self.chosen_actions_history = deque([], maxlen=history_data)
         self.reward_history = deque([], maxlen=history_data)
