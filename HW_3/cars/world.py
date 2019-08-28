@@ -26,13 +26,15 @@ class World(metaclass=ABCMeta):
 
 
 class SimpleCarWorld(World):
-    COLLISION_PENALTY = 0.2 * 1e0
-    HEADING_REWARD = 0.0 * 1e0
-    WRONG_HEADING_PENALTY = 0.2 * 1e0
-    IDLENESS_PENALTY = 0.1 * 1e0
-    SPEEDING_PENALTY = 0.1 * 1e0
-    MIN_SPEED = 0.1 * 1e0
-    MAX_SPEED = 10 * 1e0
+    COLLISION_PENALTY = 0.9
+    HEADING_REWARD = 0.0
+    WRONG_HEADING_PENALTY = 0.9
+    ALONG_LONGEST_RAY_REWARD = 0.75
+    TOWARDS_LONGEST_RAY_REWARD = 0.5
+    IDLENESS_PENALTY = 0.1
+    SPEEDING_PENALTY = 0.1
+    MIN_SPEED = 0.1
+    MAX_SPEED = 10
 
     size = (800, 600)
 
@@ -96,10 +98,13 @@ class SimpleCarWorld(World):
                 self.agent_states[a], action
             )
             self.circles[a] += angle(self.agent_states[a].position, next_agent_state.position) / (2*pi)
+            previous_agent_state = self.agent_states[a]
             self.agent_states[a] = next_agent_state
-            a.receive_feedback(self.reward(next_agent_state, collision))
+            previous_vision = vision
+            vision = self.vision_for(a)
+            a.receive_feedback(self.reward(previous_agent_state, next_agent_state, collision, previous_vision, vision))
 
-    def reward(self, state, collision):
+    def reward(self, previous_state, state, collision, previous_vision, vision):
         """
         Вычисление награды агента, находящегося в состоянии state.
         Эту функцию можно (и иногда нужно!) менять, чтобы обучить вашу сеть именно тем вещам, которые вы от неё хотите
@@ -113,9 +118,31 @@ class SimpleCarWorld(World):
         idle_penalty = 0 if abs(state.velocity) > self.MIN_SPEED else -self.IDLENESS_PENALTY
         speeding_penalty = 0 if abs(state.velocity) < self.MAX_SPEED else -self.SPEEDING_PENALTY * abs(state.velocity)
         collision_penalty = - max(abs(state.velocity), 0.1) * int(collision) * self.COLLISION_PENALTY
+        along_longest_ray_reward = 0
+        towards_longest_ray_reward = 0
 
+        # мы должны двигаться вдоль самого длинного луча (самый длинный луч должен быть по середине)
+        # возможно он уже посередине?        
+        rays = np.array(vision[2:])
+        maxIndex = np.argmax(rays)
+        raysNum = rays.size
+        centerRayIndex = raysNum // 2
+
+        previous_rays = np.array(previous_vision[2:])
+        previous_maxIndex = np.argmax(previous_rays)
+        if maxIndex == centerRayIndex &  previous_maxIndex == centerRayIndex:
+            along_longest_ray_reward = 1
+        else:
+            if (abs(centerRayIndex - maxIndex) < abs(centerRayIndex - previous_maxIndex)):
+                towards_longest_ray_reward = 1
+
+
+        # награда за движение вдоль длинного луча только если движение в правильном направлении
+        # награда за движение в сторону длинного луча только если движение в правильном направлении
         return heading_reward * self.HEADING_REWARD + heading_penalty * self.WRONG_HEADING_PENALTY + collision_penalty \
-               + idle_penalty + speeding_penalty
+                + idle_penalty + speeding_penalty \
+                + heading_reward * along_longest_ray_reward * self.ALONG_LONGEST_RAY_REWARD  \
+                + heading_reward * towards_longest_ray_reward  * self.TOWARDS_LONGEST_RAY_REWARD
 
     def eval_reward(self, state, collision):
         """
