@@ -32,7 +32,7 @@ class Agent(metaclass=ABCMeta):
 
 
 class SimpleCarAgent(Agent):
-    def __init__(self, rays=5, hiddenLayers=None, history_data=int(50000)):
+    def __init__(self, rays=5, hiddenLayers=None, history_data=int(100), neural_net=None):
         """
         Создаёт машинку
         :param history_data: количество хранимых нами данных о результатах предыдущих шагов
@@ -40,6 +40,16 @@ class SimpleCarAgent(Agent):
 
         self.evaluate_mode = False  # этот агент учится или экзаменутеся? если учится, то False
         self._rays =  rays # выберите число лучей ладара; например, 5        
+
+        self.sensor_data_history = deque([], maxlen=history_data)
+        self.chosen_actions_history = deque([], maxlen=history_data)
+        self.reward_history = deque([], maxlen=history_data)
+        self.step = 0
+
+        if neural_net != None:
+            self.neural_net = neural_net
+            return
+
         if hiddenLayers == None:            
             hiddenLayers = [self.rays + 6, self.rays + 4]
 
@@ -58,19 +68,16 @@ class SimpleCarAgent(Agent):
         self.neural_net.weights[0][-1, -1] = 2/0.75 # # Нормализация для ускорения
         self.neural_net.biases[0] = np.zeros_like(self.neural_net.biases[0])
 
-        self.sensor_data_history = deque([], maxlen=history_data)
-        self.chosen_actions_history = deque([], maxlen=history_data)
-        self.reward_history = deque([], maxlen=history_data)
-        self.step = 0
 
     @classmethod
     def from_weights(cls, layers, weights, biases):
         """
         Создание агента по параметрам его нейронной сети. Разбираться не обязательно.
         """
-        agent = SimpleCarAgent()
-        agent._rays = weights[0].shape[1] - 4
+        rays = weights[0].shape[1] - 4        
         nn = Network(layers, output_function=lambda x: x, output_derivative=lambda x: 1)
+
+        agent = SimpleCarAgent(rays = rays, neural_net = nn)
 
         if len(weights) != len(nn.weights):
             raise AssertionError("You provided %d weight matrices instead of %d" % (len(weights), len(nn.weights)))
