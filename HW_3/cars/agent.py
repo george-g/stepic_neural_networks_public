@@ -32,14 +32,14 @@ class Agent(metaclass=ABCMeta):
 
 
 class SimpleCarAgent(Agent):
-    def __init__(self, rays=5, hiddenLayers=None, history_data=int(100), neural_net=None):
+    def __init__(self, rays=5, hiddenLayers=None, history_data=int(1000), neural_net=None):
         """
         Создаёт машинку
         :param history_data: количество хранимых нами данных о результатах предыдущих шагов
-        """
+        """        
 
         self.evaluate_mode = False  # этот агент учится или экзаменутеся? если учится, то False
-        self._rays =  rays # выберите число лучей ладара; например, 5        
+        self._rays =  rays # выберите число лучей ладара; например, 5
 
         self.sensor_data_history = deque([], maxlen=history_data)
         self.chosen_actions_history = deque([], maxlen=history_data)
@@ -159,7 +159,7 @@ class SimpleCarAgent(Agent):
 
         return best_action
 
-    def receive_feedback(self, reward, train_every=50, reward_depth=7):
+    def receive_feedback(self, reward, train_every=50, reward_depth=4):
         """
         Получить реакцию на последнее решение, принятое сетью, и проанализировать его
         :param reward: оценка внешним миром наших действий
@@ -188,7 +188,7 @@ class SimpleCarAgent(Agent):
             X_train = np.concatenate([self.sensor_data_history, self.chosen_actions_history], axis=1)
             y_train = self.reward_history
             train_data = [(x[:, np.newaxis], y) for x, y in zip(X_train, y_train)]
-            self.neural_net.SGD(training_data=train_data, epochs=15, mini_batch_size=train_every, eta=0.05)
+            self.neural_net.SGD(training_data=train_data, epochs=15, mini_batch_size=train_every, eta=0.1)
             # todo: Послать cost и веса сети
             print('send cost and evaluate')
             cost = cost_function(self.neural_net, train_data, onehot=True)

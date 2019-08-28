@@ -26,11 +26,11 @@ class World(metaclass=ABCMeta):
 
 
 class SimpleCarWorld(World):
-    COLLISION_PENALTY = 0.9
+    COLLISION_PENALTY = 0.5
     HEADING_REWARD = 0.0
-    WRONG_HEADING_PENALTY = 0.9
-    ALONG_LONGEST_RAY_REWARD = 0.75
-    TOWARDS_LONGEST_RAY_REWARD = 0.5
+    WRONG_HEADING_PENALTY = 0.5
+    ALONG_LONGEST_RAY_REWARD = 0.5
+    TOWARDS_LONGEST_RAY_REWARD = 0.45
     IDLENESS_PENALTY = 0.1
     SPEEDING_PENALTY = 0.1
     MIN_SPEED = 0.1
@@ -142,7 +142,8 @@ class SimpleCarWorld(World):
         return heading_reward * self.HEADING_REWARD + heading_penalty * self.WRONG_HEADING_PENALTY + collision_penalty \
                 + idle_penalty + speeding_penalty \
                 + heading_reward * along_longest_ray_reward * self.ALONG_LONGEST_RAY_REWARD  \
-                + heading_reward * towards_longest_ray_reward  * self.TOWARDS_LONGEST_RAY_REWARD
+                + heading_reward * towards_longest_ray_reward  * self.TOWARDS_LONGEST_RAY_REWARD \
+                + 0.5
 
     def eval_reward(self, state, collision):
         """

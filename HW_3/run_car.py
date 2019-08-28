@@ -16,7 +16,7 @@ parser.add_argument("--seed", type=int)
 parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',
                     help='amount of neurons in hidden layers')
 parser.add_argument('--rays', dest='rays', type=int, 
-                    help='amount of ladar ray', default = 5)
+                    help='amount of ladar ray', default = 21)
 args = parser.parse_args()
 
 print(args.steps, args.seed, args.filename, args.evaluate)

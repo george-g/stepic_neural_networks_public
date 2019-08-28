@@ -25,10 +25,10 @@ parser = argparse.ArgumentParser(description='Process some integers.')
 parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',
                     help='amount of neurons in hidden layers')
 parser.add_argument('--rays', dest='rays', type=int, 
-                    help='amount of ladar ray', default = 7)
+                    help='amount of ladar ray', default = 21)
 parser.add_argument("-s", "--steps", type=int)
 parser.add_argument("-f", "--filename", type=str)
-parser.add_argument("--seed", type=int, default = 23)
+parser.add_argument("--seed", type=int, default = 13)
 
 args = parser.parse_args()
 print(args.steps, args.seed, args.filename, args.rays, args.hiddenLayers)
@@ -53,6 +53,7 @@ print(hiddenLayers)
 def startRunCar():
     pass
     popenargs = [sys.executable, 'run_car.py', 
+                                        '-f', 'network_config_agent_0_layers_25_25_60_60_60_1.txt',
                                         '--seed', str(args.seed), 
                                         '--rays', str(args.rays)
                                         ]
