@@ -10,7 +10,7 @@ import argparse
 
 parser = argparse.ArgumentParser()
 parser.add_argument("-s", "--steps", type=int)
-parser.add_argument("-f", "--filename", type=str)
+parser.add_argument("-f", "--filename", type=str) #, default = 'network_config_agent_0_layers_25_25_60_60_60_1.txt')
 parser.add_argument("-e", "--evaluate", type=bool)
 parser.add_argument("--seed", type=int)
 parser.add_argument('--hiddenlayers', dest='hiddenLayers', metavar='N', type=int, nargs='+',

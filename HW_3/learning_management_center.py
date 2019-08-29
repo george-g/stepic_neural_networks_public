@@ -53,7 +53,7 @@ print(hiddenLayers)
 def startRunCar():
     pass
     popenargs = [sys.executable, 'run_car.py', 
-                                        '-f', 'network_config_agent_0_layers_25_25_60_60_60_1.txt',
+                                        #'-f', 'network_config_agent_0_layers_25_25_60_60_1.txt',
                                         '--seed', str(args.seed), 
                                         '--rays', str(args.rays)
                                         ]
